@@ -19,7 +19,7 @@ class L2Norm(nn.Module):
         return x
 
 class s3fd(nn.Module):
-    def __init__(self):
+    def __init__(self, num_classes=10):
         super(s3fd, self).__init__()
         self.conv1_1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1)
         self.conv1_2 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
@@ -47,25 +47,9 @@ class s3fd(nn.Module):
 
         self.conv7_1 = nn.Conv2d(512, 128, kernel_size=1, stride=1, padding=0)
         self.conv7_2 = nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1)
-
-        self.conv3_3_norm = L2Norm(256,scale=10)
-        self.conv4_3_norm = L2Norm(512,scale=8)
-        self.conv5_3_norm = L2Norm(512,scale=5)
-
-        self.conv3_3_norm_mbox_conf = nn.Conv2d(256, 4, kernel_size=3, stride=1, padding=1)
-        self.conv3_3_norm_mbox_loc  = nn.Conv2d(256, 4, kernel_size=3, stride=1, padding=1)
-        self.conv4_3_norm_mbox_conf = nn.Conv2d(512, 2, kernel_size=3, stride=1, padding=1)
-        self.conv4_3_norm_mbox_loc  = nn.Conv2d(512, 4, kernel_size=3, stride=1, padding=1)
-        self.conv5_3_norm_mbox_conf = nn.Conv2d(512, 2, kernel_size=3, stride=1, padding=1)
-        self.conv5_3_norm_mbox_loc  = nn.Conv2d(512, 4, kernel_size=3, stride=1, padding=1)
-
-        self.fc7_mbox_conf     = nn.Conv2d(1024, 2, kernel_size=3, stride=1, padding=1)
-        self.fc7_mbox_loc      = nn.Conv2d(1024, 4, kernel_size=3, stride=1, padding=1)
-        self.conv6_2_mbox_conf = nn.Conv2d(512, 2, kernel_size=3, stride=1, padding=1)
-        self.conv6_2_mbox_loc  = nn.Conv2d(512, 4, kernel_size=3, stride=1, padding=1)
-        self.conv7_2_mbox_conf = nn.Conv2d(256, 2, kernel_size=3, stride=1, padding=1)
-        self.conv7_2_mbox_loc  = nn.Conv2d(256, 4, kernel_size=3, stride=1, padding=1)
-
+        
+        self.fc_1 = nn.Linear(2304, num_classes)
+        
     def forward(self, x):
         h = F.relu(self.conv1_1(x))
         h = F.relu(self.conv1_2(h))
@@ -97,26 +81,10 @@ class s3fd(nn.Module):
         h = F.relu(self.conv7_1(h))
         h = F.relu(self.conv7_2(h)); f7_2 = h
 
-        f3_3 = self.conv3_3_norm(f3_3)
-        f4_3 = self.conv4_3_norm(f4_3)
-        f5_3 = self.conv5_3_norm(f5_3)
-
-        cls1 = self.conv3_3_norm_mbox_conf(f3_3)
-        reg1 = self.conv3_3_norm_mbox_loc(f3_3)
-        cls2 = self.conv4_3_norm_mbox_conf(f4_3)
-        reg2 = self.conv4_3_norm_mbox_loc(f4_3)
-        cls3 = self.conv5_3_norm_mbox_conf(f5_3)
-        reg3 = self.conv5_3_norm_mbox_loc(f5_3)
-        cls4 = self.fc7_mbox_conf(ffc7)
-        reg4 = self.fc7_mbox_loc(ffc7)
-        cls5 = self.conv6_2_mbox_conf(f6_2)
-        reg5 = self.conv6_2_mbox_loc(f6_2)
-        cls6 = self.conv7_2_mbox_conf(f7_2)
-        reg6 = self.conv7_2_mbox_loc(f7_2)
-
-        # max-out background label
-        chunk = torch.chunk(cls1,4,1)
-        bmax  = torch.max(torch.max(chunk[0],chunk[1]),chunk[2])
-        cls1  = torch.cat([bmax,chunk[3]],dim=1)
-
-        return [cls1,reg1,cls2,reg2,cls3,reg3,cls4,reg4,cls5,reg5,cls6,reg6]
+        # print(f7_2.size())
+        # m = F.max_pool2d(h, 2, 2)
+        # print(h.size())
+        m = f7_2.view(1, -1)
+        # print(m)
+        op = self.fc_1(m)
+        return F.softmax(op)       
