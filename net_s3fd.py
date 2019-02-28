@@ -48,7 +48,7 @@ class s3fd(nn.Module):
         self.conv7_1 = nn.Conv2d(512, 128, kernel_size=1, stride=1, padding=0)
         self.conv7_2 = nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1)
         
-        self.fc_1 = nn.Linear(2304, num_classes)
+        self.fc_1 = nn.Linear(1024, num_classes)
         
     def forward(self, x):
         h = F.relu(self.conv1_1(x))
@@ -80,11 +80,13 @@ class s3fd(nn.Module):
         h = F.relu(self.conv6_2(h)); f6_2 = h
         h = F.relu(self.conv7_1(h))
         h = F.relu(self.conv7_2(h)); f7_2 = h
-
-        # print(f7_2.size())
+        print(f6_2.size())
+        print(f7_2.size())
         # m = F.max_pool2d(h, 2, 2)
-        # print(h.size())
-        m = f7_2.view(1, -1)
-        # print(m)
+        print(h.size())
+        
+        m = f7_2.view(h.size(0), -1)
+        print(m)
+        print(m.size())
         op = self.fc_1(m)
         return F.softmax(op)       
