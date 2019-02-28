@@ -121,7 +121,7 @@ class CelebDataset(Dataset):
 # In[508]:
 
 
-train_data = "/home/user/datasets/img_align_celeba/10_class/final_10_class.csv"
+train_data = "/home/user/datasets/img_align_celeba/10_class/final_10_class_train.csv"
 img_path = "/home/user/datasets/img_align_celeba/10_class/train/"
 img_ext = ".jpg"
 dset = CelebDataset(train_data,img_path,img_ext)
